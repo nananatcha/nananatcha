@@ -1,11 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>บริการรับส่งพัสดุ</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ฟอร์มสั่งงานรับ-ส่งของ</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        /* Custom styles */
+        body { font-family: 'Sarabun', sans-serif; }
+        .map-container { height: 300px; border-radius: 0.5rem; margin-top: 0.5rem; }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
-<body>
-   <form id="delivery-form">
+<body class="bg-gray-100">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+        <p class="text-white text-lg mt-4 absolute">กำลังส่งข้อมูล...</p>
+    </div>
+
+    <div class="container mx-auto p-4 max-w-lg">
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h1 class="text-2xl font-bold mb-4 text-gray-800">ฟอร์มสั่งงานรับ-ส่งของ</h1>
+            <p id="welcome-message" class="text-gray-600 mb-6">กำลังโหลดข้อมูลผู้ใช้...</p>
+
+            <form id="delivery-form">
                 <!-- Sender Info -->
                 <div class="mb-4">
                     <label for="customerName" class="block text-gray-700 font-bold mb-2">ชื่อ-นามสกุลผู้ส่ง</label>
@@ -19,16 +44,35 @@
                     <label for="parcelDetails" class="block text-gray-700 font-bold mb-2">รายละเอียดพัสดุ</label>
                     <textarea id="parcelDetails" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
                 </div>
-     </form>
-  <h2>บริการรับส่งพัสดุ</h2>
-  <form id="bookingForm">
-    <input type="text" name="name" placeholder="ชื่อลูกค้า" required><br>
-    <input type="text" name="name" placeholder="ประเภทพัสดุ" required><br>
-    <input type="text" name="origin" placeholder="ที่อยู่ต้นทาง" required><br>
-    <input type="text" name="destination" placeholder="ที่อยู่ปลายทาง" required><br>
-    <input type="text" name="maps" placeholder="ลิงก์ Google Maps หรือพิกัด" required><br>
-    <button type="submit">ส่งข้อมูล</button>
-  </form>
+
+                <!-- Origin -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h2 class="text-xl font-semibold mb-2 text-blue-600">📍 ข้อมูลต้นทาง</h2>
+                    <div class="mb-4">
+                        <label for="originAddress" class="block text-gray-700 font-bold mb-2">ที่อยู่ต้นทาง (สำหรับเข้ารับ)</label>
+                        <textarea id="originAddress" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                    </div>
+                    <p class="text-gray-600 mb-2">ปักหมุดบนแผนที่ (คลิกบนแผนที่เพื่อเลือก)</p>
+                    <div id="originMap" class="map-container"></div>
+                </div>
+
+                <!-- Destination -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h2 class="text-xl font-semibold mb-2 text-green-600">🏁 ข้อมูลปลายทาง</h2>
+                    <div class="mb-4">
+                        <label for="destinationAddress" class="block text-gray-700 font-bold mb-2">ที่อยู่ปลายทาง</label>
+                        <textarea id="destinationAddress" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                    </div>
+                    <p class="text-gray-600 mb-2">ปักหมุดบนแผนที่ (คลิกบนแผนที่เพื่อเลือก)</p>
+                    <div id="destinationMap" class="map-container"></div>
+                </div>
+
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg w-full focus:outline-none focus:shadow-outline transition-colors duration-300">
+                    ส่งข้อมูล
+                </button>
+            </form>
+        </div>
+    </div>
 
   <script>
     document.getElementById('bookingForm').addEventListener('submit', function(e) {
