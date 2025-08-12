@@ -5,9 +5,25 @@
   <title>บริการรับส่งพัสดุ</title>
 </head>
 <body>
+   <form id="delivery-form">
+                <!-- Sender Info -->
+                <div class="mb-4">
+                    <label for="customerName" class="block text-gray-700 font-bold mb-2">ชื่อ-นามสกุลผู้ส่ง</label>
+                    <input type="text" id="customerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="customerPhone" class="block text-gray-700 font-bold mb-2">เบอร์โทรศัพท์</label>
+                    <input type="tel" id="customerPhone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-6">
+                    <label for="parcelDetails" class="block text-gray-700 font-bold mb-2">รายละเอียดพัสดุ</label>
+                    <textarea id="parcelDetails" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                </div>
+     </form>
   <h2>บริการรับส่งพัสดุ</h2>
   <form id="bookingForm">
     <input type="text" name="name" placeholder="ชื่อลูกค้า" required><br>
+    <input type="text" name="name" placeholder="ประเภทพัสดุ" required><br>
     <input type="text" name="origin" placeholder="ที่อยู่ต้นทาง" required><br>
     <input type="text" name="destination" placeholder="ที่อยู่ปลายทาง" required><br>
     <input type="text" name="maps" placeholder="ลิงก์ Google Maps หรือพิกัด" required><br>
