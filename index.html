@@ -5,7 +5,7 @@
   <title>บริการรับส่งพัสดุ</title>
 </head>
 <body>
-  <h2>ฟอร์มจองบริการรับส่งพัสดุ</h2>
+  <h2>บริการรับส่งพัสดุ</h2>
   <form id="bookingForm">
     <input type="text" name="name" placeholder="ชื่อลูกค้า" required><br>
     <input type="text" name="origin" placeholder="ที่อยู่ต้นทาง" required><br>
@@ -25,7 +25,7 @@
         maps: this.maps.value
       };
 
-      fetch("https://script.google.com/macros/s/AKfycbyuYKIbdX8kxk5jdjRvGx_E92A-fy58V9aJWpZszpOvCgVsOVMge7QKvx9wrd_eiTU7tA/exec", {
+      fetch("https://script.google.com/macros/s/AKfycby3itWUPkYp-S4kaovj3x1rj7DI9fyNlU4ogwgyNu7mL_-WyH-E2Jq6OZyGue4xoyYPQw/exec", {
         method: "POST",
         body: JSON.stringify(formData)
       })
