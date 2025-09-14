@@ -1,59 +1,595 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="th">
 <head>
-  <meta charset="utf-8">
-  <title>Order Parcel</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <!-- ใส่ Google Maps API ถ้าต้องการปักหมุด -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ฟอร์มสร้างรายการจัดส่ง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://api.longdo.com/map/?key=7fe4440cd70cb6961fe1fbfdcea94610"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        /* Custom styles for map markers and UI elements */
+        .longdo-marker-pointer {
+            cursor: pointer;
+        }
+        .info-window-content {
+            padding: 8px;
+            font-size: 14px;
+        }
+        /* Hide number input spinners */
+        input[type='number']::-webkit-inner-spin-button,
+        input[type='number']::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type='number'] {
+            -moz-appearance: textfield;
+        }
+    </style>
 </head>
-<body>
-  <form id="orderForm">
-    <input id="name" placeholder="ชื่อ" required />
-    <input id="phone" placeholder="เบอร์" required />
-    <input id="originAddress" placeholder="ต้นทาง" />
-    <input id="destAddress" placeholder="ปลายทาง" />
-    <textarea id="parcelDetails" placeholder="รายละเอียด"></textarea>
-    <button type="submit">ส่งคำสั่ง</button>
-  </form>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 lg:p-8">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">สร้างรายการจัดส่ง</h1>
+            <p class="text-gray-500 mb-8">กรอกข้อมูลผู้ส่ง, ผู้รับ และเลือกตำแหน่งบนแผนที่</p>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+
+                <!-- Form Section -->
+                <div class="w-full lg:w-1/2 space-y-8">
+                    
+                    <!-- Section 1: Sender -->
+                    <div id="sender-section" class="border border-gray-200 rounded-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">1</span>ข้อมูลผู้ส่ง</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="sender-name" class="block text-sm font-medium text-gray-700">ชื่อผู้ส่ง</label>
+                                <input type="text" id="sender-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="สมชาย ใจดี">
+                                <p id="sender-name-error" class="text-red-500 text-xs mt-1 hidden">กรุณากรอกชื่อผู้ส่ง</p>
+                            </div>
+                            <div>
+                                <label for="sender-phone" class="block text-sm font-medium text-gray-700">เบอร์ติดต่อ</label>
+                                <input type="text" id="sender-phone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="0812345678">
+                                <p id="sender-phone-error" class="text-red-500 text-xs mt-1 hidden">เบอร์โทรต้องเป็นตัวเลข 7-15 หลักเท่านั้น</p>
+                            </div>
+                            <div>
+                                <label for="pickup-datetime" class="block text-sm font-medium text-gray-700">เวลานัดรับ</label>
+                                <input type="datetime-local" id="pickup-datetime" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <p id="pickup-datetime-error" class="text-red-500 text-xs mt-1 hidden">เวลานัดรับต้องเป็นเวลาในอนาคต</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Recipient -->
+                    <div id="recipient-section" class="border border-gray-200 rounded-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">2</span>ข้อมูลผู้รับ</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="recipient-name" class="block text-sm font-medium text-gray-700">ชื่อผู้รับ</label>
+                                <input type="text" id="recipient-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="นางสาวดาว สวยดี">
+                                <p id="recipient-name-error" class="text-red-500 text-xs mt-1 hidden">กรุณากรอกชื่อผู้รับ</p>
+                            </div>
+                            <div>
+                                <label for="recipient-phone" class="block text-sm font-medium text-gray-700">เบอร์ติดต่อ</label>
+                                <input type="text" id="recipient-phone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="0898765432">
+                                <p id="recipient-phone-error" class="text-red-500 text-xs mt-1 hidden">เบอร์โทรต้องเป็นตัวเลข 7-15 หลักเท่านั้น</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Map Section -->
+                <div class="w-full lg:w-1/2">
+                    <div class="sticky top-8">
+                        <div class="border border-gray-200 rounded-lg p-2 bg-white">
+                            <div class="flex justify-center items-center space-x-4 mb-2 p-2 bg-gray-50 rounded-md">
+                                <button id="set-origin-btn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium">ปักหมุดต้นทาง</button>
+                                <button id="set-dest-btn" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium">ปักหมุดปลายทาง</button>
+                            </div>
+                             <div class="relative">
+                                <input type="text" id="search-box" class="w-full border-gray-300 rounded-md shadow-sm mb-2" placeholder="ค้นหาสถานที่...">
+                            </div>
+                            <div id="map" class="w-full h-96 rounded-md"></div>
+                            <div id="geolocation-error" class="hidden text-center text-sm text-amber-700 bg-amber-100 p-3 rounded-b-md">
+                                <strong>ไม่สามารถเข้าถึงตำแหน่งของคุณได้</strong><br>
+                                คุณสามารถค้นหาหรือคลิกบนแผนที่เพื่อเลือกตำแหน่งได้ด้วยตนเอง
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Summary -->
+            <div id="summary-section" class="mt-8 border border-gray-200 rounded-lg p-6 bg-gray-50 hidden">
+                <h2 class="text-xl font-bold mb-4 flex items-center"><span class="bg-blue-500 text-white rounded-full h-8 w-8 text-sm flex items-center justify-center mr-3">3</span>สรุปข้อมูลการจัดส่ง</h2>
+                <div id="summary-content" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <!-- Data will be injected here by JS -->
+                </div>
+                <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                    <button id="recalculate-btn" class="w-full sm:w-auto flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-md font-bold hover:bg-gray-300 transition-colors">คำนวณเส้นทางใหม่</button>
+                    <button id="save-btn" class="w-full sm:w-auto flex-1 bg-green-500 text-white px-6 py-3 rounded-md font-bold hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">ยืนยันและบันทึก</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Modal for Confirmation and Status -->
+    <div id="status-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-8 shadow-2xl text-center max-w-sm mx-4">
+            <div id="modal-content">
+                 <!-- Content changes based on state -->
+            </div>
+        </div>
+    </div>
+
 
 <script>
-const LIFF_ID = '2007906947-zQ0mRjXg';
-let profileInfo = null;
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURATION ---
+    const LONGDO_API_KEY = 'YOUR_KEY_HERE'; // !!! IMPORTANT: Replace with your Longdo Map API key
+    const MOCK_BACKEND_API = '/api/shipments';
 
-async function initLiff(){
-  await liff.init({ liffId: LIFF_ID });
-  if (!liff.isLoggedIn()) liff.login(); // หรือเรียกเมื่อผู้ใช้ยังไม่ login
-  profileInfo = await liff.getProfile(); // ดึง userId
-  document.getElementById('name').value = profileInfo.displayName || '';
-}
+    // --- STATE MANAGEMENT ---
+    let map;
+    let originMarker, destMarker;
+    let routeLayer;
+    let currentMarkerMode = 'origin'; // 'origin' or 'destination'
+    
+    const state = {
+        sender: { name: '', phone: '', pickup_datetime: '' },
+        recipient: { name: '', phone: '' },
+        origin: { lon: null, lat: null, address: 'N/A' },
+        destination: { lon: null, lat: null, address: 'N/A' },
+        route: { distance_m: 0, duration_s: 0, guide: [] },
+        ui: { isSubmitting: false, error: null, success: null }
+    };
 
-async function submitForm(e){
-  e.preventDefault();
-  const payload = {
-    userId: profileInfo.userId,   // สำคัญ: ส่ง userId ไปให้ backend
-    customerName: document.getElementById('name').value,
-    customerPhone: document.getElementById('phone').value,
-    parcelDetails: document.getElementById('parcelDetails').value,
-    originAddress: document.getElementById('originAddress').value,
-    destinationAddress: document.getElementById('destAddress').value
-  };
+    // --- UI ELEMENTS ---
+    const elements = {
+        map: document.getElementById('map'),
+        setOriginBtn: document.getElementById('set-origin-btn'),
+        setDestBtn: document.getElementById('set-dest-btn'),
+        searchBox: document.getElementById('search-box'),
+        geolocationError: document.getElementById('geolocation-error'),
+        summarySection: document.getElementById('summary-section'),
+        summaryContent: document.getElementById('summary-content'),
+        recalculateBtn: document.getElementById('recalculate-btn'),
+        saveBtn: document.getElementById('save-btn'),
+        statusModal: document.getElementById('status-modal'),
+        modalContent: document.getElementById('modal-content'),
+        
+        // Form inputs
+        senderName: document.getElementById('sender-name'),
+        senderPhone: document.getElementById('sender-phone'),
+        pickupDatetime: document.getElementById('pickup-datetime'),
+        recipientName: document.getElementById('recipient-name'),
+        recipientPhone: document.getElementById('recipient-phone'),
 
-  // ส่งไป GAS Web App
-  const res = await fetch('https://script.google.com/macros/s/AKfycbxIOzC-1qumEHfxdirorkhLjsPTm7iwH8AqiqpKy12QQwKjghnCVCItpoQlEkVW1Yhd-g/exec', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+        // Error messages
+        senderNameError: document.getElementById('sender-name-error'),
+        senderPhoneError: document.getElementById('sender-phone-error'),
+        pickupDatetimeError: document.getElementById('pickup-datetime-error'),
+        recipientNameError: document.getElementById('recipient-name-error'),
+        recipientPhoneError: document.getElementById('recipient-phone-error'),
+    };
 
-  // อ่านผล (ถ้า CORS อนุญาต)
-  const json = await res.json().catch(()=>({status:'ok'}));
-  alert('ส่งข้อมูลเรียบร้อย: ' + JSON.stringify(json));
-}
+    // --- INITIALIZATION ---
+    function init() {
+        if (LONGDO_API_KEY === 'YOUR_KEY_HERE') {
+            elements.map.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-red-100 text-red-800 p-4 rounded-md">
+                    กรุณาใส่ Longdo Map API Key ของคุณในไฟล์ index.html (ตัวแปร LONGDO_API_KEY)
+                </div>`;
+            return;
+        }
+        initMap();
+        initEventListeners();
+        setMinPickupDateTime();
+    }
+    
+    function initMap() {
+        try {
+            map = new longdo.Map({ 
+                placeholder: elements.map,
+                language: 'th'
+            });
+            map.location(longdo.LocationMode.Geolocation, {
+                callback: (result) => {
+                    if (result.latitude && result.longitude) {
+                        map.location({ lon: result.longitude, lat: result.latitude });
+                        map.zoom(15);
+                    } else {
+                        elements.geolocationError.classList.remove('hidden');
+                    }
+                }
+            });
+            map.Event.bind('click', handleMapClick);
+            map.Search.placeholder(elements.searchBox);
+            map.Search.onselect(handleSearchSelect);
 
-window.onload = () => {
-  initLiff();
-  document.getElementById('orderForm').addEventListener('submit', submitForm);
-};
+        } catch (error) {
+            console.error("Longdo Map failed to initialize:", error);
+            elements.map.innerHTML = `<div class="flex items-center justify-center h-full bg-red-100 text-red-800 p-4 rounded-md">ไม่สามารถโหลดแผนที่ได้</div>`;
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    function initEventListeners() {
+        elements.setOriginBtn.addEventListener('click', () => setMarkerMode('origin'));
+        elements.setDestBtn.addEventListener('click', () => setMarkerMode('destination'));
+        
+        // Form validation listeners
+        ['senderName', 'senderPhone', 'pickupDatetime', 'recipientName', 'recipientPhone'].forEach(id => {
+            const el = elements[id.replace(/-/g, '')];
+            if(el) {
+                el.addEventListener('input', validateForm);
+            }
+        });
+        
+        elements.saveBtn.addEventListener('click', confirmAndSave);
+        elements.recalculateBtn.addEventListener('click', calculateRoute);
+    }
+    
+    // --- MAP & ROUTING LOGIC ---
+
+    function setMarkerMode(mode) {
+        currentMarkerMode = mode;
+        if (mode === 'origin') {
+            elements.setOriginBtn.classList.replace('bg-gray-200', 'bg-blue-500');
+            elements.setOriginBtn.classList.replace('text-gray-700', 'text-white');
+            elements.setDestBtn.classList.replace('bg-blue-500', 'bg-gray-200');
+            elements.setDestBtn.classList.replace('text-white', 'text-gray-700');
+        } else {
+            elements.setDestBtn.classList.replace('bg-gray-200', 'bg-blue-500');
+            elements.setDestBtn.classList.replace('text-gray-700', 'text-white');
+            elements.setOriginBtn.classList.replace('bg-blue-500', 'bg-gray-200');
+            elements.setOriginBtn.classList.replace('text-white', 'text-gray-700');
+        }
+    }
+
+    function handleMapClick(e) {
+        const mouseLocation = map.location(longdo.LocationMode.Pointer);
+        placeMarker(mouseLocation.lon, mouseLocation.lat);
+    }
+    
+    function handleSearchSelect(result) {
+        map.location({lon: result.lon, lat: result.lat}, true);
+        map.zoom(16);
+        placeMarker(result.lon, result.lat, result.name + ', ' + result.address);
+    }
+
+    function placeMarker(lon, lat, address = null) {
+        const isOrigin = currentMarkerMode === 'origin';
+        
+        if (isOrigin) {
+            if (originMarker) map.Overlays.remove(originMarker);
+            state.origin = { lon, lat };
+            originMarker = new longdo.Marker({ lon, lat }, {
+                title: 'ต้นทาง',
+                detail: 'จุดรับสินค้า',
+                draggable: true
+            });
+            map.Overlays.add(originMarker);
+            originMarker.Event.bind('dragend', () => handleMarkerDrag(originMarker, 'origin'));
+            setMarkerMode('destination');
+        } else {
+            if (destMarker) map.Overlays.remove(destMarker);
+            state.destination = { lon, lat };
+            destMarker = new longdo.Marker({ lon, lat }, {
+                title: 'ปลายทาง',
+                detail: 'จุดส่งสินค้า',
+                draggable: true
+            });
+            map.Overlays.add(destMarker);
+            destMarker.Event.bind('dragend', () => handleMarkerDrag(destMarker, 'destination'));
+        }
+
+        if (address) {
+             state[isOrigin ? 'origin' : 'destination'].address = address;
+        } else {
+             getReverseGeocode({ lon, lat }, isOrigin);
+        }
+
+        if (state.origin.lon && state.destination.lon) {
+            calculateRoute();
+        }
+    }
+
+    function handleMarkerDrag(marker, type) {
+        const newLocation = marker.location();
+        state[type] = { lon: newLocation.lon, lat: newLocation.lat };
+        getReverseGeocode(newLocation, type === 'origin');
+        if (state.origin.lon && state.destination.lon) {
+            calculateRoute();
+        }
+    }
+
+    function getReverseGeocode(location, isOrigin) {
+        map.location(location, {
+            callback: (result) => {
+                const address = result.subdistrict + ', ' + result.district + ', ' + result.province;
+                state[isOrigin ? 'origin' : 'destination'].address = address;
+                updateSummaryUI();
+            }
+        });
+    }
+
+    async function calculateRoute() {
+        if (!state.origin.lon || !state.destination.lon) return;
+
+        showModal('loading', 'กำลังคำนวณเส้นทาง...');
+
+        const url = `https://api.longdo.com/RouteService/json/route/guide?flon=${state.origin.lon}&flat=${state.origin.lat}&tlon=${state.destination.lon}&tlat=${state.destination.lat}&mode=t&type=25&locale=th&key=${LONGDO_API_KEY}`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                 throw new Error(`Longdo API Error: ${response.statusText}`);
+            }
+            const data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+                const routeInfo = data.data[0];
+                state.route.distance_m = routeInfo.distance;
+                state.route.duration_s = routeInfo.interval;
+                state.route.guide = data.guide;
+
+                if (routeLayer) map.Overlays.remove(routeLayer);
+                
+                const routeGeom = data.data.map(item => item.geom);
+                routeLayer = new longdo.Polyline(routeGeom, {
+                    lineColor: 'rgba(0, 102, 255, 0.8)',
+                    lineWidth: 5
+                });
+                map.Overlays.add(routeLayer);
+                map.bound({
+                    minLon: Math.min(state.origin.lon, state.destination.lon),
+                    minLat: Math.min(state.origin.lat, state.destination.lat),
+                    maxLon: Math.max(state.origin.lon, state.destination.lon),
+                    maxLat: Math.max(state.origin.lat, state.destination.lat)
+                });
+            } else {
+                throw new Error("ไม่พบเส้นทาง");
+            }
+
+            elements.summarySection.classList.remove('hidden');
+            updateSummaryUI();
+            validateForm(); // Re-validate to enable save button
+            hideModal();
+
+        } catch (error) {
+            console.error('Failed to calculate route:', error);
+            showModal('error', 'คำนวณเส้นทางล้มเหลว', error.message);
+        }
+    }
+    
+    // --- UI UPDATE FUNCTIONS ---
+
+    function updateSummaryUI() {
+        const distanceKm = (state.route.distance_m / 1000).toFixed(2);
+        const durationMin = Math.ceil(state.route.duration_s / 60);
+
+        elements.summaryContent.innerHTML = `
+            <div class="font-semibold text-gray-800">ผู้ส่ง:</div>
+            <div>${state.sender.name || 'N/A'} (${state.sender.phone || 'N/A'})</div>
+            
+            <div class="font-semibold text-gray-800">ผู้รับ:</div>
+            <div>${state.recipient.name || 'N/A'} (${state.recipient.phone || 'N/A'})</div>
+            
+            <div class="font-semibold text-gray-800">ต้นทาง:</div>
+            <div>${state.origin.address}</div>
+
+            <div class="font-semibold text-gray-800">ปลายทาง:</div>
+            <div>${state.destination.address}</div>
+
+            <div class="font-semibold text-gray-800">ระยะทางโดยประมาณ:</div>
+            <div class="font-bold text-blue-600">${distanceKm} กม.</div>
+
+            <div class="font-semibold text-gray-800">เวลาเดินทางโดยประมาณ:</div>
+            <div class="font-bold text-blue-600">${durationMin} นาที</div>
+        `;
+    }
+    
+    // --- FORM VALIDATION ---
+    
+    function setMinPickupDateTime() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        elements.pickupDatetime.min = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    function validateField(inputEl, errorEl, validationFn, errorMessage) {
+        if (validationFn(inputEl.value)) {
+            errorEl.classList.add('hidden');
+            inputEl.classList.remove('border-red-500');
+            return true;
+        } else {
+            errorEl.textContent = errorMessage;
+            errorEl.classList.remove('hidden');
+            inputEl.classList.add('border-red-500');
+            return false;
+        }
+    }
+
+    function validateForm() {
+        const isSenderNameValid = validateField(elements.senderName, elements.senderNameError, val => val.trim() !== '', 'กรุณากรอกชื่อผู้ส่ง');
+        const isSenderPhoneValid = validateField(elements.senderPhone, elements.senderPhoneError, val => /^[0-9]{7,15}$/.test(val), 'เบอร์โทรต้องเป็นตัวเลข 7-15 หลักเท่านั้น');
+        const isPickupTimeValid = validateField(elements.pickupDatetime, elements.pickupDatetimeError, val => val && new Date(val) > new Date(), 'เวลานัดรับต้องเป็นเวลาในอนาคต');
+        const isRecipientNameValid = validateField(elements.recipientName, elements.recipientNameError, val => val.trim() !== '', 'กรุณากรอกชื่อผู้รับ');
+        const isRecipientPhoneValid = validateField(elements.recipientPhone, elements.recipientPhoneError, val => /^[0-9]{7,15}$/.test(val), 'เบอร์โทรต้องเป็นตัวเลข 7-15 หลักเท่านั้น');
+        
+        const isFormValid = isSenderNameValid && isSenderPhoneValid && isPickupTimeValid && isRecipientNameValid && isRecipientPhoneValid;
+        const isRouteValid = state.route.distance_m > 0 && state.route.duration_s > 0;
+        
+        elements.saveBtn.disabled = !(isFormValid && isRouteValid);
+        
+        // Update state
+        state.sender.name = elements.senderName.value;
+        state.sender.phone = elements.senderPhone.value;
+        state.sender.pickup_datetime = elements.pickupDatetime.value;
+        state.recipient.name = elements.recipientName.value;
+        state.recipient.phone = elements.recipientPhone.value;
+        
+        if (elements.summarySection.classList.contains('hidden') === false) {
+             updateSummaryUI();
+        }
+
+        return isFormValid;
+    }
+
+    // --- SUBMISSION LOGIC ---
+
+    function confirmAndSave() {
+        if (!validateForm() || elements.saveBtn.disabled) return;
+        
+        const content = `
+            <h3 class="text-lg font-bold mb-2">ยืนยันการบันทึกข้อมูล</h3>
+            <p class="text-sm text-gray-600 mb-4">โปรดตรวจสอบข้อมูลก่อนยืนยัน</p>
+            <div class="flex gap-4">
+                <button id="cancel-save-btn" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium">ยกเลิก</button>
+                <button id="confirm-save-btn" class="flex-1 bg-green-500 text-white px-4 py-2 rounded-md font-medium">ยืนยัน</button>
+            </div>
+        `;
+        showModal('confirm', content);
+        
+        document.getElementById('confirm-save-btn').addEventListener('click', postShipmentData);
+        document.getElementById('cancel-save-btn').addEventListener('click', hideModal);
+    }
+    
+    async function postShipmentData() {
+        showModal('loading', 'กำลังบันทึกข้อมูล...');
+
+        const pickupDate = new Date(state.sender.pickup_datetime);
+        const timezoneOffset = -pickupDate.getTimezoneOffset() / 60;
+        const offsetString = (timezoneOffset >= 0 ? '+' : '-') + String(Math.abs(timezoneOffset)).padStart(2, '0') + ':00';
+        
+        const payload = {
+            sender: {
+                name: state.sender.name,
+                phone: state.sender.phone,
+                pickup_datetime: pickupDate.toISOString().replace('Z', offsetString),
+                origin: { 
+                    lat: state.origin.lat, 
+                    lon: state.origin.lon, 
+                    address: state.origin.address 
+                }
+            },
+            recipient: {
+                name: state.recipient.name,
+                phone: state.recipient.phone,
+                destination: { 
+                    lat: state.destination.lat, 
+                    lon: state.destination.lon, 
+                    address: state.destination.address 
+                }
+            },
+            route: {
+                distance_m: state.route.distance_m,
+                duration_s: state.route.duration_s,
+                guide: state.route.guide,
+            },
+            metadata: {
+                created_by: "web",
+                notes: ""
+            }
+        };
+
+        try {
+             // --- MOCK API CALL ---
+            console.log("Submitting to backend:", JSON.stringify(payload, null, 2));
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+            const mockResponse = {
+                ok: true,
+                status: 201,
+                json: async () => ({
+                    id: `SHIP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`,
+                    status: "created",
+                    created_at: new Date().toISOString()
+                })
+            };
+            // --- End Mock ---
+
+            // Replace with actual fetch call to your backend
+            // const response = await fetch(MOCK_BACKEND_API, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload)
+            // });
+            const response = mockResponse;
+
+            if (!response.ok) {
+                throw new Error(`Backend Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            showModal('success', 'บันทึกข้อมูลสำเร็จ!', `Shipment ID: ${result.id}`);
+
+        } catch (error) {
+            console.error('Failed to save shipment:', error);
+            showModal('error', 'บันทึกข้อมูลล้มเหลว', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+        }
+    }
+
+    // --- MODAL UTILITY ---
+
+    function showModal(type, title, message = '') {
+        let content = '';
+        switch (type) {
+            case 'loading':
+                content = `
+                    <div class="flex flex-col items-center">
+                        <svg class="animate-spin h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <h3 class="text-lg font-bold">${title}</h3>
+                    </div>`;
+                break;
+            case 'success':
+                content = `
+                    <div class="flex flex-col items-center">
+                         <svg class="h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <h3 class="text-lg font-bold text-green-700">${title}</h3>
+                        <p class="text-sm text-gray-600 mt-1">${message}</p>
+                        <button onclick="document.getElementById('status-modal').classList.add('hidden'); window.location.reload();" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-md w-full">ปิด</button>
+                    </div>`;
+                break;
+            case 'error':
+                 content = `
+                    <div class="flex flex-col items-center">
+                        <svg class="h-12 w-12 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <h3 class="text-lg font-bold text-red-700">${title}</h3>
+                        <p class="text-sm text-gray-600 mt-1">${message}</p>
+                        <button onclick="document.getElementById('status-modal').classList.add('hidden')" class="mt-4 bg-red-500 text-white px-4 py-2 rounded-md w-full">ปิด</button>
+                    </div>`;
+                break;
+            default: // confirm
+                content = title; // The content is passed directly
+        }
+
+        elements.modalContent.innerHTML = content;
+        elements.statusModal.classList.remove('hidden');
+    }
+    
+    function hideModal() {
+        elements.statusModal.classList.add('hidden');
+    }
+
+    // --- START THE APP ---
+    init();
+});
 </script>
+
 </body>
 </html>
